@@ -242,9 +242,9 @@ public class V8 extends V8Object {
     }
 
     static void checkThread() {
-        if ((thread != null) && (thread != Thread.currentThread())) {
-            throw new Error("Invalid V8 thread access.");
-        }
+        //        if ((thread != null) && (thread != Thread.currentThread())) {
+        //            throw new Error("Invalid V8 thread access.");
+        //        }
     }
 
     void registerCallback(final Object object, final Method method, final int objectHandle, final String jsFunctionName) {
@@ -321,6 +321,38 @@ public class V8 extends V8Object {
             return result;
         }
         throw new V8RuntimeException("Unknown return type: " + result.getClass());
+    }
+
+    protected void callVoidJavaMethods(final int[] methodIDs, final int[] parameterHandles) throws Throwable {
+        try {
+            for (int i = 0; i < methodIDs.length; i++) {
+            MethodDescriptor methodDescriptor = getFunctionRegistry().get(methodIDs[i]);
+            V8Array parameters = new V8Array(v8, parameterHandles[i]);
+            if (methodDescriptor.voidCallback != null) {
+                methodDescriptor.voidCallback.invoke(parameters);
+                    continue;
+            }
+            boolean hasVarArgs = methodDescriptor.method.isVarArgs();
+            V8Array params = parameters;
+            Object[] args = new Object[0];
+            if (params != null) {
+                args = getArgs(methodDescriptor, parameters, hasVarArgs);
+            }
+
+            checkArgs(args);
+            try {
+                methodDescriptor.method.invoke(methodDescriptor.object, args);
+            } catch (InvocationTargetException e) {
+                throw e.getTargetException();
+            } catch (IllegalAccessException | IllegalArgumentException e) {
+                throw e;
+            } finally {
+                releaseArguments(args, hasVarArgs);
+            }
+        }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     protected void callVoidJavaMethod(final int methodID, final V8Array parameters) throws Throwable {

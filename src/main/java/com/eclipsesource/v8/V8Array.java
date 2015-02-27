@@ -21,6 +21,11 @@ public class V8Array extends V8Object {
         V8.checkThread();
     }
 
+    public V8Array(final V8 v8, final int handle) {
+        super(v8, handle);
+        V8.checkThread();
+    }
+
     @Override
     protected void initialize(final int runtimeHandle, final int objectHandle) {
         v8._initNewV8Array(runtimeHandle, objectHandle);

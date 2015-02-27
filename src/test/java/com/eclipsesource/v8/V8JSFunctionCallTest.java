@@ -10,13 +10,13 @@
  ******************************************************************************/
 package com.eclipsesource.v8;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
 
 public class V8JSFunctionCallTest {
 
@@ -142,6 +142,30 @@ public class V8JSFunctionCallTest {
         assertEquals("Smith", result.getString("last"));
         assertEquals(7, result.getInteger("age"));
         parameters.release();
+        result.release();
+    }
+
+    public void callback(final V8Object object) {
+        V8Array parameters = new V8Array(v8);
+        parameters.push((V8Object) null);
+        parameters.push("John");
+        parameters.push("Smith");
+        parameters.push(7);
+        object.executeVoidFunction("call", parameters);
+        parameters.release();
+    }
+
+    @Test
+    public void testVoidAnonymousFunctionCall() {
+        v8.executeVoidScript("var func = function(first, last, age) {person = {'first':first, 'last':last, 'age':age};}");
+        v8.registerJavaMethod(this, "callback", "callback", new Class<?>[] { V8Object.class });
+
+        v8.executeVoidScript("callback(func);");
+        V8Object result = v8.getObject("person");
+
+        assertEquals("John", result.getString("first"));
+        assertEquals("Smith", result.getString("last"));
+        assertEquals(7, result.getInteger("age"));
         result.release();
     }
 

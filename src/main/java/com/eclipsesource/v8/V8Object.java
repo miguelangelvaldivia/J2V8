@@ -21,6 +21,8 @@ public class V8Object extends V8Value {
     protected V8Object(final V8 v8, final int objectHandle) {
         if (v8 == null) {
             this.v8 = (V8) this;
+        } else {
+            this.v8 = v8;
         }
         this.objectHandle = objectHandle;
         released = false;
