@@ -246,6 +246,7 @@ ShellArrayBufferAllocator array_buffer_allocator;
 
 JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createIsolate
 (JNIEnv *env, jobject v8, jstring globalAlias) {
+  V8::SetFlagsFromString("--expose-debug-as=Debug", 23); 
   V8Runtime* runtime = new V8Runtime();
   v8::Isolate::CreateParams create_params;
   create_params.array_buffer_allocator = &array_buffer_allocator;

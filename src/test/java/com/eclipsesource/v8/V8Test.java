@@ -49,6 +49,135 @@ public class V8Test {
         }
     }
 
+    String s = ""
+            + "var debug = Debug.Debug\n"
+            + "//------------------------------------------------------------------------------\n"
+            + "function dummyFunc() {var x = 7;\n}\n"
+            + "//------------------------------------------------------------------------------\n"
+            + "function listener(event, execState, eventData, data) {\n"
+            + " // if (event != debug.DebugEvent.Break) return\n"
+            + "  var script   = eventData.func().script().name()\n"
+            + "  var line     = eventData.sourceLine()\n"
+            + "  var col      = eventData.sourceColumn()\n"
+            + "  var location = script + ':' + line + ':' + col\n"
+            + "  var funcName = eventData.func().name()\n"
+            + "  if (funcName != '') {\n"
+            + "    location += ' ' + funcName + '()'\n"
+            + "  }\n"
+            + "  log(location)\n"
+            + "  var frame0 = execState.frame(0)\n"
+            + "  //log('' + frame0.localName(0) + ' = ' + frame0.localValue(0).value());\n"
+            + "  if ( typeof frame0.localName(0) != 'undefined') {\n"
+            + "    frame0.scope(0).setVariableValue(frame0.localName(0), 7);\n"
+            + "  }\n"
+
+            + "  //execState.prepareStep(debug.StepAction.StepIn)\n"
+            + "}\n"
+            + "//------------------------------------------------------------------------------\n"
+            + "function doSomething() {\n"
+            + "  for (var i=0; i<10; i++) {\n"
+            + "    log('' + i);\n"
+            + "  }\n"
+            + "}\n"
+            + "//------------------------------------------------------------------------------\n"
+            + "debug.setListener(listener)\n"
+            + "//debug.setBreakPoint(dummyFunc, 0, 0)\n"
+            + "debug.setBreakPoint(doSomething, 0, 13)\n"
+
+    + "dummyFunc()\n"
+            + "\n"
+            + "doSomething()\n";
+
+    public static class Console implements JavaVoidCallback {
+
+        @Override
+        public void invoke(final V8Object receiver, final V8Array parameters) {
+
+            System.out.println(parameters.getString(0));
+
+        }
+
+    }
+
+    public static Object monitor = new Object();
+
+    public static class DebugHandler implements JavaVoidCallback {
+
+        @Override
+        public void invoke(final V8Object receiver, final V8Array parameters) {
+            if ((parameters == null) || parameters.isUndefined()) {
+                return;
+            }
+            int event = parameters.getInteger(0);
+            System.out.println("event: " + event);
+            if (event != 1) {
+                return;
+            }
+            V8Object execState = parameters.getObject(1);
+            V8Object eventData = parameters.getObject(2);
+            V8Object data = parameters.getObject(3);
+
+            try {
+                Object line = eventData.executeFunction("sourceLine", null);
+                Object col = eventData.executeFunction("sourceColumn", null);
+                synchronized (monitor) {
+                    monitor.wait();
+                }
+                System.out.println("Debug handler event (" + event + ") " + line + ":" + col);
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                execState.release();
+                eventData.release();
+                data.release();
+            }
+        }
+
+    }
+
+    static boolean running = true;
+
+    @Test
+    public void testDebug() {
+        //        Thread t = new Thread(new Runnable() {
+        //
+        //            @Override
+        //            public void run() {
+        //
+        //                while (running) {
+        //                    System.out.print("jsdb> ");
+        //                    try {
+        //                        BufferedReader buffer = new BufferedReader(new InputStreamReader(System.in));
+        //                        String line = buffer.readLine();
+        //                        System.out.println();
+        //                        //                        synchronized (monitor) {
+        //                        //                            monitor.notify();
+        //                        //                        }
+        //                    } catch (IOException e) {
+        //                        e.printStackTrace();
+        //                    }
+        //                }
+        //            }
+        //        });
+        //        t.start();
+
+        //        V8Object debug1 = v8.getObject("Debug");
+        //        V8Object debug = debug1.getObject("Debug");
+        //        debug.registerJavaMethod(new DebugHandler(), "__j2v8_debug_handler");
+        //        V8Function debugHandler = (V8Function) debug.getObject("__j2v8_debug_handler");
+        //        V8Array parameters = new V8Array(v8).push(debugHandler);
+        //        debug.executeFunction("setListener", parameters);
+        //
+        //        debug.release();
+        //        debug1.release();
+        //        parameters.release();
+        //        debugHandler.release();
+
+        v8.registerJavaMethod(new Console(), "log");
+        v8.executeVoidScript(s, "myscript.js", 0);
+        running = false;
+    }
+
     @Test
     public void testV8Setup() {
         assertNotNull(v8);
