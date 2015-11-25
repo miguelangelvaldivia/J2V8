@@ -55,7 +55,7 @@ public class V8Test {
             + "function dummyFunc() {var x = 7;\n}\n"
             + "//------------------------------------------------------------------------------\n"
             + "function listener(event, execState, eventData, data) {\n"
-            + " // if (event != debug.DebugEvent.Break) return\n"
+            + "  if (event != debug.DebugEvent.Break) return\n"
             + "  var script   = eventData.func().script().name()\n"
             + "  var line     = eventData.sourceLine()\n"
             + "  var col      = eventData.sourceColumn()\n"
@@ -68,21 +68,23 @@ public class V8Test {
             + "  var frame0 = execState.frame(0)\n"
             + "  //log('' + frame0.localName(0) + ' = ' + frame0.localValue(0).value());\n"
             + "  if ( typeof frame0.localName(0) != 'undefined') {\n"
-            + "    frame0.scope(0).setVariableValue(frame0.localName(0), 7);\n"
+            + "    //frame0.scope(0).setVariableValue(frame0.localName(0), 7);\n"
             + "  }\n"
 
-            + "  //execState.prepareStep(debug.StepAction.StepIn)\n"
+    + "  //execState.prepareStep(debug.StepAction.StepIn)\n"
             + "}\n"
             + "//------------------------------------------------------------------------------\n"
+
             + "function doSomething() {\n"
             + "  for (var i=0; i<10; i++) {\n"
             + "    log('' + i);\n"
             + "  }\n"
             + "}\n"
+
             + "//------------------------------------------------------------------------------\n"
             + "debug.setListener(listener)\n"
-            + "//debug.setBreakPoint(dummyFunc, 0, 0)\n"
-            + "debug.setBreakPoint(doSomething, 0, 13)\n"
+            + "debug.setBreakPointByScriptIdAndPosition"
+            + "//debug.setBreakPoint(doSomething, 0, 0)\n"
 
     + "dummyFunc()\n"
             + "\n"
@@ -176,6 +178,34 @@ public class V8Test {
         v8.registerJavaMethod(new Console(), "log");
         v8.executeVoidScript(s, "myscript.js", 0);
         running = false;
+    }
+
+    class MyCallback implements JavaCallback {
+
+        @Override
+        public Object invoke(final V8Object receiver, final V8Array parameters) {
+            System.out.println("Called in Java: " + receiver.equals(v8));
+            //new V8Template(accessor, mutator).newInstance();
+            return receiver;
+        }
+
+    }
+
+    @Test
+    public void testConstructorFunction() {
+        V8Object sup = new V8Object(v8);
+        v8.add("sup", sup);
+
+        v8.executeVoidScript("var sub = function() {};\n"
+                + "x = sup;\n"
+                + "var j = x.y;\n"
+                + "x.y = 10;\n");
+
+        System.out.println(v8.getObject("x").getInteger("y"));
+
+        //System.out.println(sup.get("x"));
+
+        sup.release();
     }
 
     @Test

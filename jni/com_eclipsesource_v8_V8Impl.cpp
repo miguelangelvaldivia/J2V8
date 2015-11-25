@@ -246,7 +246,7 @@ ShellArrayBufferAllocator array_buffer_allocator;
 
 JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createIsolate
 (JNIEnv *env, jobject v8, jstring globalAlias) {
-  V8::SetFlagsFromString("--expose-debug-as=Debug", 23); 
+  V8::SetFlagsFromString("--expose-debug-as=Debug", 23);
   V8Runtime* runtime = new V8Runtime();
   v8::Isolate::CreateParams create_params;
   create_params.array_buffer_allocator = &array_buffer_allocator;
@@ -274,10 +274,24 @@ JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createIsolate
   return reinterpret_cast<jlong>(runtime);
 }
 
+void InceptorGet(Local<String> name,
+                 const PropertyCallbackInfo<Value>& info) {
+  cout << "Get" << endl;
+  info.GetReturnValue().Set(12);
+}
+
+void InceptorSet(Local<String> name,
+                 Local<Value> value,
+                 const PropertyCallbackInfo<Value>& info) {                 
+  cout <<  "Set" << endl;
+}
+
 JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1initNewV8Object
 (JNIEnv *env, jobject, jlong v8RuntimePtr) {
   Isolate* isolate = SETUP(env, v8RuntimePtr, 0);
-  Local<Object> obj = Object::New(isolate);
+  Local<ObjectTemplate> t = ObjectTemplate::New(isolate);
+  t->SetNamedPropertyHandler(InceptorGet, InceptorSet);
+  Local<Object> obj = t->NewInstance();
   Persistent<Object>* container = new Persistent<Object>;
   container->Reset(reinterpret_cast<V8Runtime*>(v8RuntimePtr)->isolate, obj);
   return reinterpret_cast<jlong>(container);
