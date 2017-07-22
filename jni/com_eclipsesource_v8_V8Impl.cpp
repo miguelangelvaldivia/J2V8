@@ -469,6 +469,7 @@ JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createIsolate
   }
   delete(runtime->locker);
   runtime->isolate->Exit();
+  runtime->isolate->DiscardThreadSpecificMetadata();
   return reinterpret_cast<jlong>(runtime);
 }
 
