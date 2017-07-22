@@ -22,6 +22,7 @@ public class V8Locker {
     private boolean released = false;
     private V8      runtime;
 
+    // This should never be called by anyone except the V8 runtime.
     V8Locker(final V8 runtime) {
         this.runtime = runtime;
         acquire();

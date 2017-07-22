@@ -367,6 +367,7 @@ public class V8 extends V8Object {
             synchronized (lock) {
                 runtimeCounter--;
             }
+            locker.release();
             _releaseRuntime(v8RuntimePtr);
             v8RuntimePtr = 0L;
             released = true;

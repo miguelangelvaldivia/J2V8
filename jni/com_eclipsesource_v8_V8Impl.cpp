@@ -446,6 +446,7 @@ JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createIsolate
   v8::Isolate::CreateParams create_params;
   create_params.array_buffer_allocator = &array_buffer_allocator;
   runtime->isolate = v8::Isolate::New(create_params);
+  runtime->isolate->Enter();
   runtime->locker = new Locker(runtime->isolate);
   runtime->isolate_scope = new Isolate::Scope(runtime->isolate);
   runtime->v8 = env->NewGlobalRef(v8);
@@ -467,12 +468,14 @@ JNIEXPORT jlong JNICALL Java_com_eclipsesource_v8_V8__1createIsolate
     runtime->globalObject->Reset(runtime->isolate, context->Global()->GetPrototype()->ToObject(runtime->isolate));
   }
   delete(runtime->locker);
+  runtime->isolate->Exit();
   return reinterpret_cast<jlong>(runtime);
 }
 
 JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1acquireLock
   (JNIEnv *env, jobject, jlong v8RuntimePtr) {
   V8Runtime* runtime = reinterpret_cast<V8Runtime*>(v8RuntimePtr);
+  runtime->isolate->Enter();
   runtime->locker = new Locker(runtime->isolate);
 }
 
@@ -481,6 +484,7 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1releaseLock
   V8Runtime* runtime = reinterpret_cast<V8Runtime*>(v8RuntimePtr);
   delete(runtime->locker);
   runtime->locker = NULL;
+  runtime->isolate->Exit();
 }
 
 JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1lowMemoryNotification

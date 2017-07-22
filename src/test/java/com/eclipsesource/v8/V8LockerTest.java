@@ -44,29 +44,30 @@ public class V8LockerTest {
 
     @Test
     public void testAcquireOnCreation() {
-        V8Locker v8Locker = new V8Locker(v8);
+        V8Locker v8Locker = v8.getLocker();
 
         v8Locker.checkThread();
     }
 
     @Test
     public void testGetThread() {
-        V8Locker v8Locker = new V8Locker(v8);
+        V8Locker v8Locker = v8.getLocker();
 
         assertEquals(Thread.currentThread(), v8Locker.getThread());
     }
 
     @Test
     public void testGetThreadNullAfterRelease() {
-        V8Locker v8Locker = new V8Locker(v8);
+        V8Locker v8Locker = v8.getLocker();
         v8Locker.release();
 
         assertNull(v8Locker.getThread());
+        v8Locker.acquire();
     }
 
     @Test
     public void testAcquireLocker() {
-        V8Locker v8Locker = new V8Locker(v8);
+        V8Locker v8Locker = v8.getLocker();
         v8Locker.release();
         v8Locker.acquire();
 
@@ -75,16 +76,17 @@ public class V8LockerTest {
 
     @Test
     public void testMultipleRelease() {
-        V8Locker v8Locker = new V8Locker(v8);
+        V8Locker v8Locker = v8.getLocker();
 
         v8Locker.release();
         v8Locker.release();
         v8Locker.release();
+        v8Locker.acquire();
     }
 
     @Test
     public void testReleaseAfterV8Released() {
-        V8Locker v8Locker = new V8Locker(v8);
+        V8Locker v8Locker = v8.getLocker();
         v8.release();
 
         v8Locker.release();
@@ -93,7 +95,7 @@ public class V8LockerTest {
 
     @Test
     public void testTryAcquireLocker_True() {
-        V8Locker v8Locker = new V8Locker(v8);
+        V8Locker v8Locker = v8.getLocker();
         v8Locker.release();
         boolean result = v8Locker.tryAcquire();
 
@@ -103,22 +105,23 @@ public class V8LockerTest {
 
     @Test
     public void testHasLock() {
-        V8Locker v8Locker = new V8Locker(v8);
+        V8Locker v8Locker = v8.getLocker();
 
         assertTrue(v8Locker.hasLock());
     }
 
     @Test
     public void testDoesNotHasLock() {
-        V8Locker v8Locker = new V8Locker(v8);
+        V8Locker v8Locker = v8.getLocker();
         v8Locker.release();
 
         assertFalse(v8Locker.hasLock());
+        v8Locker.acquire();
     }
 
     @Test
     public void testThreadLocked_tryAcquire() throws InterruptedException {
-        final V8Locker v8Locker = new V8Locker(v8);
+        final V8Locker v8Locker = v8.getLocker();
         final boolean result[] = new boolean[1];
         Thread t = new Thread(new Runnable() {
 
@@ -135,7 +138,7 @@ public class V8LockerTest {
 
     @Test
     public void testThreadLocked() throws InterruptedException {
-        final V8Locker v8Locker = new V8Locker(v8);
+        final V8Locker v8Locker = v8.getLocker();
         passed = false;
         Thread t = new Thread(new Runnable() {
 
@@ -157,13 +160,14 @@ public class V8LockerTest {
 
     @Test
     public void testCannotUseReleasedLocker() {
-        V8Locker v8Locker = new V8Locker(v8);
+        V8Locker v8Locker = v8.getLocker();
         v8Locker.release();
 
         try {
             v8Locker.checkThread();
         } catch (Error e) {
             assertTrue(e.getMessage().startsWith("Invalid V8 thread access"));
+            v8Locker.acquire();
             return;
         }
         fail("Expected exception");
