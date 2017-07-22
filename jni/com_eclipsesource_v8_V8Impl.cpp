@@ -485,6 +485,7 @@ JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1releaseLock
   delete(runtime->locker);
   runtime->locker = NULL;
   runtime->isolate->Exit();
+  runtime->isolate->DiscardThreadSpecificMetadata();
 }
 
 JNIEXPORT void JNICALL Java_com_eclipsesource_v8_V8__1lowMemoryNotification
